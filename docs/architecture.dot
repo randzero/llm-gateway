@@ -1,0 +1,31 @@
+digraph llm_gateway {
+  rankdir=TB;
+  bgcolor="transparent";
+  graph [fontname="Helvetica", nodesep=0.5, ranksep=0.7];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, penwidth=1.2, color="#9aa4b2"];
+  edge  [fontname="Helvetica", fontsize=9, color="#77808c", penwidth=1.1, arrowsize=0.7];
+
+  client [label="client\n(OpenAI / Anthropic)", fillcolor="#eaf1fb", color="#9bb8e0"];
+
+  subgraph cluster_workers {
+    label="vLLM worker  ×N";
+    fontsize=10;
+    color="#c2c8d0";
+    style="rounded,dashed";
+    engine [label="vLLM engine\n(inference server)", fillcolor="#e7f5ea", color="#8fce9f"];
+    plugin [label="llm-gateway-vllm\n(plugin, runs in the vLLM process)",
+            fillcolor="#daf0e0", color="#8fce9f", style="rounded,filled,dashed"];
+  }
+
+  router [label="llm-gateway  —  router\nproxy · policies · discovery · tracing",
+          fillcolor="#d6e4fb", color="#5b8def"];
+  stated [label="stated  —  state service\nstate plane + prefix index",
+          fillcolor="#fde8d6", color="#e0a06a"];
+  redis [label="Redis", shape=cylinder, fillcolor="#f6dede", color="#cc8a8a"];
+
+  client -> router [label=" request"];
+  router -> engine [label="forward request (HTTP)\nLB / cache-aware", color="#5b8def", penwidth=1.8];
+  plugin -> stated [label="/state, /kv\n(push, async)", style=dashed];
+  router -> stated [label="/match  (one call / request)", color="#c0392b", penwidth=1.8];
+  stated -> redis;
+}

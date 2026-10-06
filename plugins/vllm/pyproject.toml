@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-gateway-vllm"
+version = "0.1.0"
+description = "Optional vLLM engine plugin for llm-gateway: reports real KV/load/session state."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+# No hard dependency on vLLM: it is the host environment. The vLLM-importing
+# modules are only imported by vLLM itself, at runtime.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+# --- the two extension points vLLM discovers automatically -----------------
+[project.entry-points."vllm.general_plugins"]
+llm_gateway = "llm_gateway_vllm:register"
+
+[project.entry-points."vllm.stat_logger_plugins"]
+llm_gateway_stats = "llm_gateway_vllm.stats:GatewayStatLogger"
+
+# Endpoint plugins add HTTP routes on the API server and are NOT loaded by
+# default — allowlist with VLLM_PLUGINS=llm_gateway_hashing (recent vLLM only).
+[project.entry-points."vllm.endpoint_plugins"]
+llm_gateway_hashing = "llm_gateway_vllm.endpoint_plugin:HashingEndpointPlugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
